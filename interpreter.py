@@ -10,6 +10,18 @@ class Interpreter:
         self.env = {}
 
     def evaluate(self, node):
+        # if function
+        if isinstance(node, ConditionNode):
+            cond = self.evaluate(node.condition)
+            body = node.then_body if cond else (node.else_body or [])
+            result = None
+
+            for stmt in body:
+                result = self.evaluate(stmt)
+
+            return result
+
+
         # programa
         if isinstance(node, ProgramNode):
             result = None
@@ -83,6 +95,18 @@ class Interpreter:
                 return left * right
             if node.op == "/":
                 return left / right
+            if node.op == ">=":
+                return left >= right
+            if node.op == "<=":
+                return left <= right
+            if node.op == ">":
+                return left > right
+            if node.op == "<":
+                return left < right
+            if node.op == "==":
+                return left == right
+            if node.op == "!=":
+                return left != right
 
             raise ValueError(f"operador não suportado: {node.op}")
 

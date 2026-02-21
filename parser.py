@@ -39,11 +39,11 @@ def parse_call(cur: Cursor):
     args: List[Any] = []
 
     if cur.peek() != ")":
-        args.append(parse_expr(cur))
+        args.append(parse_compare(cur))
 
         while cur.peek() == ",":
             cur.consume(",")
-            args.append(parse_expr(cur))
+            args.append(parse_compare(cur))
 
     cur.consume(")")
     return CallNode(
@@ -114,26 +114,58 @@ def parse_expr(cur: Cursor):
 
     return node
 
+def parse_compare(cur: Cursor):
+    node = parse_expr(cur)
+    while cur.peek() in (">", "<", ">=", "<=", "==", "!="):
+        op = cur.consume()
+        right = parse_expr(cur)
+        node = BinaryNode(left=node, op=op, right=right)
+    return node
+
+def parse_if(cur: Cursor):
+    cur.consume("if")
+    condition = parse_compare(cur)
+
+    cur.consume("{")
+    then_body = []
+    while cur.peek() != "}":
+        then_body.append(parse_statement(cur))
+    cur.consume("}")
+
+    else_body = None
+    if cur.peek() == "else":
+        cur.consume("else")
+        cur.consume("{")
+        else_body = []
+        while cur.peek() != "}":
+            else_body.append(parse_statement(cur))
+
+        cur.consume("}")
+
+    return ConditionNode(condition, then_body, else_body)
 
 def parse_statement(cur: Cursor):
+    if cur.peek() == "if":
+        return parse_if(cur)
+
     # AQUI NASCE AS RESERVED KEYWORDS
     if cur.peek() == "func":
         return parse_funcdef(cur)
 
     if cur.peek() == "return":
         cur.consume("return")
-        value = parse_expr(cur)
+        value = parse_compare(cur)
         return ReturnNode(value=value)
 
     # assignment: a = expr
     if is_ident(cur.peek()) and cur.peek_next() == "=":
         name = cur.consume()
         cur.consume("=")
-        value = parse_expr(cur)
+        value = parse_compare(cur)
         return AssignNode(name=name, value=value)
 
     # senão, é expressão normal
-    return parse_expr(cur)
+    return parse_compare(cur)
 
 def parser(tokens: list[str]) -> ProgramNode:
     cur = Cursor(tokens)

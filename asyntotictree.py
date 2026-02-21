@@ -35,6 +35,13 @@ class CallNode:
     name: str
     args: list[Any]
 
+@dataclass
+class ConditionNode:
+   condition: Any
+   then_body: list[Any]
+   else_body: list[Any] | None
+
+
 OPERATIONS = {
   "+": BinaryNode,
   "-": BinaryNode,
